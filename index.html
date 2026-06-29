@@ -75,7 +75,7 @@
   }
   .card{
     position:relative;z-index:1;
-    margin:0 3.5%;flex:1;
+    margin:0 3.5%;
     background:#ffffff;
     padding:16px 26px 18px;
     display:flex;flex-direction:column;
@@ -100,14 +100,14 @@
   .apply-box [contenteditable]:focus{background:#fff7ee}
 
   /* 달력 */
-  .cal{width:100%;border-collapse:collapse;margin-top:12px;table-layout:fixed;flex:1}
+  .cal{width:100%;border-collapse:collapse;margin-top:12px;table-layout:fixed}
   .cal th{
     font-size:13px;font-weight:700;padding:4px 0;border-bottom:2px solid #111;
     letter-spacing:1px;
   }
   .cal th.sun{color:var(--red)} .cal th.sat{color:var(--blue)}
   .cal td{
-    border:1px solid #b9b9b9;vertical-align:top;height:70px;overflow:hidden;
+    border:1px solid #b9b9b9;vertical-align:top;height:78px;overflow:hidden;
     padding:2px 3px 4px;position:relative;
   }
   .cal td.empty{background:transparent}
@@ -170,7 +170,7 @@
     html,body{background:#fff;margin:0}
     .toolbar,.overlay,.hint{display:none !important}
     .stage{padding:0;margin:0;display:block}
-    .poster{margin:0 auto;box-shadow:none;break-inside:avoid;page-break-inside:avoid}
+    .poster{margin:0 auto;box-shadow:none;height:100vh;overflow:hidden;break-inside:avoid;page-break-inside:avoid}
     body.editing .cal td:hover{background:none;outline:none}
   }
 </style>
