@@ -74,7 +74,7 @@
   }
   .card{
     position:relative;z-index:1;
-    margin:0 6%;
+    margin:0 3.5%;
     background:var(--paper);
     padding:22px 26px 18px;
     display:flex;flex-direction:column;
@@ -100,21 +100,21 @@
   /* 달력 */
   .cal{width:100%;border-collapse:collapse;margin-top:9px;table-layout:fixed}
   .cal th{
-    font-size:12px;font-weight:700;padding:4px 0;border-bottom:1.5px solid #111;
+    font-size:13px;font-weight:700;padding:4px 0;border-bottom:2px solid #111;
     letter-spacing:1px;
   }
   .cal th.sun{color:var(--red)} .cal th.sat{color:var(--blue)}
   .cal td{
-    border:0.5px solid #d6d6d6;vertical-align:top;height:76px;overflow:hidden;
+    border:1px solid #b9b9b9;vertical-align:top;height:82px;overflow:hidden;
     padding:2px 3px 4px;position:relative;
   }
-  .cal td.empty{background:#fafafa;border-color:#eee}
-  .daynum{font-size:11px;font-weight:700;position:absolute;top:2px;right:4px}
+  .cal td.empty{background:#fafafa}
+  .daynum{font-size:12px;font-weight:700;position:absolute;top:2px;right:5px}
   .daynum.sun{color:var(--red)} .daynum.sat{color:var(--blue)}
-  .entries{margin-top:14px;display:flex;flex-direction:column;gap:2px}
-  .entry{line-height:1.12;text-align:center;cursor:default}
+  .entries{margin-top:16px;display:flex;flex-direction:column;gap:2px}
+  .entry{line-height:1.14;text-align:center;cursor:default}
   .entry .nm{font-weight:600;display:block}
-  .entry .tm{font-size:8px;opacity:.95;display:block}
+  .entry .tm{font-size:9px;opacity:.95;display:block}
   .c-black{color:var(--c-black)} .c-green{color:var(--c-green)}
   .c-blue{color:var(--c-blue)} .c-orange{color:var(--c-orange)}
   .c-red{color:var(--c-red)} .c-purple{color:var(--c-purple)}
@@ -456,8 +456,8 @@ function renderCalendar(){
           const div=document.createElement('div');
           div.className='entry '+colorClass(timeColor(e.time));   // 색상 = 시간대 색
           const nm=(e.name||'');
-          // 이름이 길수록 글자를 줄여 한두 줄에 들어가게
-          const fs = nm.length<=7 ? 9.5 : nm.length<=9 ? 8.6 : nm.length<=11 ? 7.8 : nm.length<=13 ? 7.1 : 6.5;
+          // 이름이 길수록 글자를 줄여 한두 줄에 들어가게 (칸이 넓어져 기본 크기 상향)
+          const fs = nm.length<=7 ? 11 : nm.length<=9 ? 10 : nm.length<=11 ? 9 : nm.length<=13 ? 8.2 : 7.4;
           div.innerHTML=`<span class="nm" style="font-size:${fs}px">${escapeHtml(nm)}</span>`+
                         (e.time?`<span class="tm">${escapeHtml(e.time)}</span>`:'');
           ent.appendChild(div);
