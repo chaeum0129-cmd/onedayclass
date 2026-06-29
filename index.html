@@ -22,6 +22,7 @@
     --c-purple:#6a1b9a;
   }
   *{box-sizing:border-box}
+  html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   body{
     margin:0;
     font-family:"Noto Sans KR",sans-serif;
@@ -61,13 +62,15 @@
     width:760px;
     min-height:1075px;          /* A4 비율 (760 : 1075) */
     display:flex;flex-direction:column;
-    background:#cfcabf center/cover no-repeat;
+    background:#cfcabf;
     box-shadow:0 10px 30px rgba(0,0,0,.25);
     padding:40px 0 0;           /* 위쪽 사진 여백 */
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
   }
-  .poster .bg{
+  img.bg{
     position:absolute;inset:0;z-index:0;
-    background-size:cover;background-position:center;
+    width:100%;height:100%;object-fit:cover;
+    display:none;                /* 사진 없으면 숨김 */
   }
   .card{
     position:relative;z-index:1;
@@ -198,7 +201,7 @@
 
 <div class="stage">
   <div class="poster" id="poster">
-    <div class="bg" id="bg"></div>
+    <img class="bg" id="bg" alt="">
     <div class="card">
       <div class="logo-script">First Barista Academy</div>
       <svg class="logo-mark" viewBox="0 0 100 100" fill="none" stroke="#111" stroke-width="5">
@@ -407,7 +410,7 @@ function loadGlobal(){
     if(g.notes){ document.querySelectorAll('.footer .notes li').forEach((el,i)=>{ if(g.notes[i]!=null) el.textContent=g.notes[i]; }); }
     if(g.phone) $('.footer .phone').textContent=g.phone;
     if(g.loc) $('.footer .loc').textContent=g.loc;
-    if(g.bg){ $('#bg').style.backgroundImage=`url(${g.bg})`; $('#poster').style.backgroundImage=`url(${g.bg})`; }
+    if(g.bg){ const b=$('#bg'); b.src=g.bg; b.dataset.src=g.bg; b.style.display='block'; }
   }catch(e){}
 }
 function saveGlobal(){
@@ -640,16 +643,16 @@ $('#bgFile').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f) return;
   const reader=new FileReader();
   reader.onload=()=>{
-    $('#bg').style.backgroundImage=`url(${reader.result})`;
-    $('#bg').dataset.src=reader.result;
-    $('#poster').style.backgroundImage=`url(${reader.result})`;
+    const b=$('#bg');
+    b.src=reader.result; b.dataset.src=reader.result; b.style.display='block';
     saveGlobal();
   };
   reader.readAsDataURL(f);
 });
 $('#btnBgClear').addEventListener('click',()=>{
-  $('#bg').style.backgroundImage=''; $('#bg').dataset.src='';
-  $('#poster').style.backgroundImage=''; saveGlobal();
+  const b=$('#bg');
+  b.removeAttribute('src'); b.dataset.src=''; b.style.display='none';
+  saveGlobal();
 });
 
 /* 공통 텍스트 자동저장 */
