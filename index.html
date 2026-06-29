@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>원데이 클래스 포스터 생성기 · 퍼스트바리스타</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Playfair+Display:wght@700;900&family=Pinyon+Script&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1a1a1a;
+    --line:#222;
+    --red:#c62828;
+    --blue:#1565c0;
+    --paper:#ffffff;
+    --c-black:#1a1a1a;
+    --c-green:#2e7d32;
+    --c-blue:#1565c0;
+    --c-orange:#c0631a;
+    --c-red:#c62828;
+    --c-purple:#6a1b9a;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:"Noto Sans KR",sans-serif;
+    background:#e9e7e2;
+    color:#1a1a1a;
+  }
+
+  /* ===== 상단 컨트롤바 (인쇄 시 숨김) ===== */
+  .toolbar{
+    position:sticky;top:0;z-index:50;
+    background:#2b2b2b;color:#fff;
+    padding:10px 16px;
+    display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+  }
+  .toolbar h1{font-size:15px;margin:0 14px 0 0;font-weight:700;letter-spacing:.3px}
+  .toolbar label{font-size:13px;color:#ccc;display:flex;align-items:center;gap:5px}
+  .toolbar select,.toolbar input[type=file]{
+    font-family:inherit;font-size:13px;padding:5px 8px;border-radius:6px;border:none;
+  }
+  .btn{
+    font-family:inherit;font-size:13px;font-weight:600;
+    padding:7px 13px;border-radius:6px;border:none;cursor:pointer;
+    background:#4a4a4a;color:#fff;transition:.15s;
+  }
+  .btn:hover{background:#5d5d5d}
+  .btn.primary{background:#c0631a}
+  .btn.primary:hover{background:#d6742a}
+  .btn.ghost{background:transparent;border:1px solid #666;color:#ddd}
+  .toolbar .sp{flex:1}
+  .hint{font-size:12px;color:#999;width:100%;margin-top:2px}
+
+  /* ===== 포스터 영역 ===== */
+  .stage{padding:28px;display:flex;justify-content:center}
+  .poster{
+    position:relative;
+    width:760px;
+    background:#cfcabf center/cover no-repeat;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    overflow:hidden;
+    padding:40px 0 6px;     /* 위/아래 사진 여백 */
+  }
+  .poster .bg{
+    position:absolute;inset:0;z-index:0;
+    background-size:cover;background-position:center;
+  }
+  .card{
+    position:relative;z-index:1;
+    margin:0 6%;
+    background:var(--paper);
+    padding:22px 26px 18px;
+    display:flex;flex-direction:column;
+    box-shadow:0 6px 20px rgba(0,0,0,.18);
+  }
+
+  /* 헤더 */
+  .logo-script{font-family:"Pinyon Script",cursive;font-size:20px;text-align:center;line-height:1;margin-bottom:2px}
+  .logo-mark{display:block;margin:6px auto 0;width:26px;height:26px}
+  .title-en{font-family:"Playfair Display",serif;font-weight:900;font-size:38px;text-align:center;letter-spacing:2px;line-height:1;margin-top:6px}
+  .title-ym{font-family:"Playfair Display",serif;font-weight:900;font-size:30px;text-align:center;line-height:1.1;margin-top:2px;border-bottom:1.5px solid #111;padding-bottom:6px;display:inline-block;}
+  .ym-wrap{text-align:center}
+  .subtitle{text-align:center;font-weight:700;font-size:15px;margin:9px 0 6px}
+
+  /* 접수방법 박스 */
+  .apply-head{font-weight:700;font-size:13px;letter-spacing:6px;margin-bottom:4px}
+  .apply-head small{letter-spacing:0;font-weight:500;font-size:12px;margin-left:6px}
+  .apply-box{border:1px solid #222;padding:8px 10px;font-size:11px;line-height:1.65}
+  .apply-box .red{color:var(--red);font-weight:600}
+  .apply-box [contenteditable]{outline:none}
+  .apply-box [contenteditable]:focus{background:#fff7ee}
+
+  /* 달력 */
+  .cal{width:100%;border-collapse:collapse;margin-top:9px;table-layout:fixed}
+  .cal th{
+    font-size:12px;font-weight:700;padding:4px 0;border-bottom:1.5px solid #111;
+    letter-spacing:1px;
+  }
+  .cal th.sun{color:var(--red)} .cal th.sat{color:var(--blue)}
+  .cal td{
+    border:0.5px solid #d6d6d6;vertical-align:top;height:1px;
+    padding:2px 3px 4px;position:relative;
+  }
+  .cal td.empty{background:#fafafa;border-color:#eee}
+  .daynum{font-size:11px;font-weight:700;position:absolute;top:2px;right:4px}
+  .daynum.sun{color:var(--red)} .daynum.sat{color:var(--blue)}
+  .entries{margin-top:13px;display:flex;flex-direction:column;gap:3px;min-height:40px;padding-bottom:1px}
+  .entry{font-size:9.5px;line-height:1.2;text-align:center;cursor:default}
+  .entry .nm{font-weight:600;display:block}
+  .entry .tm{font-size:8.5px;opacity:.95;display:block}
+  .c-black{color:var(--c-black)} .c-green{color:var(--c-green)}
+  .c-blue{color:var(--c-blue)} .c-orange{color:var(--c-orange)}
+  .c-red{color:var(--c-red)} .c-purple{color:var(--c-purple)}
+
+  /* 편집 모드: 날짜칸 클릭 가능 표시 */
+  body.editing .cal td:not(.empty){cursor:pointer}
+  body.editing .cal td:not(.empty):hover{background:#fff7ee;outline:1.5px solid #c0631a;outline-offset:-1.5px}
+
+  /* 푸터 */
+  .footer{margin-top:8px;font-size:10px;line-height:1.6}
+  .footer .notes{display:flex;justify-content:space-between;align-items:flex-end}
+  .footer .notes ul{margin:0;padding-left:4px;list-style:none}
+  .footer .notes li{margin:1px 0}
+  .footer .phone{font-family:"Playfair Display",serif;font-weight:700;font-size:21px;white-space:nowrap}
+  .footer .loc{text-align:center;color:var(--blue);font-size:10px;margin-top:5px;border-top:1px dotted #bbb;padding-top:4px}
+  .first-foot{position:relative;z-index:1;text-align:center;padding:12px 0 16px;color:#fff;
+    font-family:"Playfair Display",serif;font-weight:700;letter-spacing:9px;font-size:26px;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+  .first-foot small{display:block;letter-spacing:3px;font-size:8px;font-weight:400;margin-top:-2px}
+
+  /* ===== 편집 패널 (모달) ===== */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+  .overlay.open{display:flex}
+  .panel{background:#fff;border-radius:12px;width:580px;max-width:100%;max-height:90vh;overflow:auto;padding:20px 22px}
+  .panel h3{margin:0 0 4px;font-size:18px}
+  .panel .sub{color:#777;font-size:13px;margin-bottom:14px}
+  .row{display:grid;grid-template-columns:108px 1fr 84px 70px 28px;gap:6px;align-items:center;margin-bottom:8px}
+  .row input{font-family:inherit;font-size:13px;padding:7px 8px;border:1px solid #ccc;border-radius:6px;width:100%}
+  .row select{font-family:inherit;font-size:13px;padding:7px 5px;border:1px solid #ccc;border-radius:6px;width:100%}
+  .row .del{background:#f3f3f3;border:none;border-radius:6px;cursor:pointer;font-size:15px;color:#c62828;padding:7px 0}
+  .row .del:hover{background:#fde8e8}
+  .row datalist{display:none}
+  .row.mrow{grid-template-columns:140px 1fr 76px 28px}
+  .row.trow{grid-template-columns:1fr 28px}
+  .row-head{display:grid;grid-template-columns:108px 1fr 84px 70px 28px;gap:6px;font-size:11px;color:#888;margin-bottom:4px;padding:0 2px}
+  .row-head.mhead{grid-template-columns:140px 1fr 76px 28px}
+  .panel-actions{display:flex;gap:8px;margin-top:16px}
+  .panel-actions .sp{flex:1}
+  .add-line{background:#f1f1f1;border:1px dashed #bbb;border-radius:8px;width:100%;padding:9px;cursor:pointer;font-size:13px;color:#555;margin-top:4px}
+  .add-line:hover{background:#ececec}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+
+  /* ===== 인쇄 ===== */
+  @media print{
+    @page{size:A4 portrait;margin:6mm}
+    body{background:#fff}
+    .toolbar,.overlay,.hint{display:none !important}
+    .stage{padding:0}
+    .poster{width:100%;box-shadow:none;padding:20px 0 6px}
+    body.editing .cal td:hover{background:none;outline:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>원데이 클래스 포스터 생성기</h1>
+  <label>연도
+    <select id="selYear"></select>
+  </label>
+  <label>월
+    <select id="selMonth"></select>
+  </label>
+  <button class="btn" id="btnEdit">✏️ 편집 모드</button>
+  <button class="btn" id="btnMenuMgr">📋 메뉴 목록</button>
+  <button class="btn" id="btnTimeMgr">⏰ 시간 종류</button>
+  <label class="btn ghost" style="cursor:pointer">🖼️ 배경사진
+    <input type="file" id="bgFile" accept="image/*" style="display:none">
+  </label>
+  <button class="btn ghost" id="btnBgClear">배경 제거</button>
+  <div class="sp"></div>
+  <button class="btn ghost" id="btnExport">백업 저장</button>
+  <label class="btn ghost" style="cursor:pointer">백업 불러오기
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  </label>
+  <button class="btn primary" id="btnPrint">🖨️ PDF / 인쇄</button>
+  <div class="hint">날짜 칸을 클릭하면 메뉴를 추가·수정할 수 있어요. 입력 내용은 이 브라우저에 월별로 자동 저장됩니다. (GitHub Pages에 올려서 매달 쓰셔도 됩니다)</div>
+</div>
+
+<div class="stage">
+  <div class="poster" id="poster">
+    <div class="bg" id="bg"></div>
+    <div class="card">
+      <div class="logo-script">First Barista Academy</div>
+      <svg class="logo-mark" viewBox="0 0 100 100" fill="none" stroke="#111" stroke-width="5">
+        <polygon points="50,8 88,30 88,70 50,92 12,70 12,30"/>
+        <path d="M50,8 L50,50 M50,50 L88,30 M50,50 L12,30"/>
+      </svg>
+      <div class="title-en">ONEDAY&nbsp;&nbsp;CLASS</div>
+      <div class="ym-wrap"><span class="title-ym" id="ymText">2026.07</span></div>
+      <div class="subtitle">퍼스트바리스타제과제빵화성학원 원데이 클래스</div>
+
+      <div class="apply-head">접 수 방 법<small id="priceTxt" contenteditable="true">/ 1회 50,000 ~</small></div>
+      <div class="apply-box">
+        <div contenteditable="true">– 전화로 잔여석 확인 후 등록하세요. 등록순으로 마감됩니다. (2인 1조로 운영, 정원 5~10명)</div>
+        <div contenteditable="true">– 학원 내방 또는 무통장 입금</div>
+        <div contenteditable="true">– TEL : 031-8077-2432</div>
+        <div contenteditable="true">– 입금정보 : 케이뱅크 100-202-688136  예금주 : 조성길</div>
+        <div class="red" contenteditable="true">– 품목마다 금액이 상이하니 학원에서 안내 받고 등록하세요~</div>
+      </div>
+
+      <table class="cal">
+        <thead>
+          <tr>
+            <th class="sun">SUN</th><th>MON</th><th>TUE</th><th>WED</th><th>THU</th><th>FRI</th><th class="sat">SAT</th>
+          </tr>
+        </thead>
+        <tbody id="calBody"></tbody>
+      </table>
+
+      <div class="footer">
+        <div class="notes">
+          <ul>
+            <li contenteditable="true">* 준비물 : 앞치마, 행주</li>
+            <li contenteditable="true">* 완납기준 순차배정, 주차가능 (전액지원)</li>
+            <li contenteditable="true">* 연령층 상관없이 등록 가능</li>
+          </ul>
+          <div class="phone" contenteditable="true">☎ 031) 8077-2432</div>
+        </div>
+        <div class="loc" contenteditable="true">위치 : 경기도 화성시 동탄오산로 86-7 GTX 광장프리미엄빌2 3층 (1층에 "도타누리" 간판이 보여요~)</div>
+      </div>
+    </div>
+    <div class="first-foot">FIRST<small>FIRST BARISTA ACADEMY</small></div>
+  </div>
+</div>
+
+<!-- 자동완성 목록 -->
+<datalist id="dlNames"></datalist>
+<datalist id="dlTimes"></datalist>
+
+<!-- 편집 패널 -->
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <h3 id="panelTitle">7월 1일 (수)</h3>
+    <div class="sub">먼저 분류를 고르면 그 수업 메뉴만 자동완성에 떠요. 메뉴를 고르면 시간·색상이 자동으로 채워집니다.</div>
+    <div class="row-head"><span>분류</span><span>메뉴명</span><span>시간</span><span>색상</span><span></span></div>
+    <div id="rows"></div>
+    <button class="add-line" id="addRow">+ 메뉴 추가</button>
+    <div class="panel-actions">
+      <button class="btn ghost" id="btnCancel">취소</button>
+      <div class="sp"></div>
+      <button class="btn" id="btnClearDay">이 날 비우기</button>
+      <button class="btn primary" id="btnSaveDay">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 메뉴 목록 관리 -->
+<div class="overlay" id="menuOverlay">
+  <div class="panel">
+    <h3>저장된 메뉴 목록</h3>
+    <div class="sub">자주 만드는 메뉴를 분류별로 저장해두면 날짜 입력 시 골라 쓸 수 있어요. 날짜를 저장할 때마다 여기에 자동으로 쌓입니다. (시간은 입력할 때 골라 넣어요)</div>
+    <div class="row-head mhead"><span>분류</span><span>메뉴명</span><span>색상</span><span></span></div>
+    <div id="menuRows"></div>
+    <button class="add-line" id="addMenuRow">+ 메뉴 추가</button>
+    <div class="panel-actions">
+      <button class="btn ghost" id="btnMenuCancel">취소</button>
+      <div class="sp"></div>
+      <button class="btn primary" id="btnMenuSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 시간 종류 관리 -->
+<div class="overlay" id="timeOverlay">
+  <div class="panel" style="width:380px">
+    <h3>시간 종류</h3>
+    <div class="sub">날짜 입력 시 시간 칸에서 골라 넣을 시간대를 만들어두세요. (직접 다른 시간을 타이핑해도 됩니다)</div>
+    <div class="row-head" style="grid-template-columns:1fr 28px"><span>시간대</span><span></span></div>
+    <div id="timeRows"></div>
+    <button class="add-line" id="addTimeRow">+ 시간 추가</button>
+    <div class="panel-actions">
+      <button class="btn ghost" id="btnTimeCancel">취소</button>
+      <div class="sp"></div>
+      <button class="btn primary" id="btnTimeSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  {key:'black', label:'검정', css:'var(--c-black)'},
+  {key:'green', label:'초록', css:'var(--c-green)'},
+  {key:'blue',  label:'파랑', css:'var(--c-blue)'},
+  {key:'orange',label:'주황', css:'var(--c-orange)'},
+  {key:'red',   label:'빨강', css:'var(--c-red)'},
+  {key:'purple',label:'보라', css:'var(--c-purple)'},
+];
+const CATEGORIES = ['홈베이커리','파티스리베이직','채식베이커리'];
+const CAT_COLOR = {'홈베이커리':'orange','파티스리베이직':'blue','채식베이커리':'green','미분류':'black'};
+const WEEK_KR = ['일','월','화','수','목','금','토'];
+
+function colorOptions(sel){
+  return COLORS.map(c=>`<option value="${c.key}" ${c.key===sel?'selected':''}>${c.label}</option>`).join('');
+}
+function catOptions(sel, withAll){
+  const list = withAll ? ['', ...CATEGORIES, '미분류'] : [...CATEGORIES, '미분류'];
+  return list.map(c=>`<option value="${c}" ${c===sel?'selected':''}>${c||'전체'}</option>`).join('');
+}
+
+let state = { year:2026, month:7, days:{} };   // days: {1:[{name,time,color}], ...}
+let editing = false;
+let activeDay = null;
+
+const $ = s => document.querySelector(s);
+
+/* ---------- 저장 키 ---------- */
+const keyFor = (y,m)=>`oneday_${y}_${String(m).padStart(2,'0')}`;
+const GLOBAL_KEY = 'oneday_global';   // 접수정보/푸터/가격/배경 등 공통
+const MENU_KEY = 'oneday_menus';      // 자주 쓰는 메뉴 목록
+const TIME_KEY = 'oneday_times';      // 시간 종류 프리셋
+
+/* ---------- 시간 종류 ---------- */
+const STARTER_TIMES = ['10:00-13:00','14:00-17:00','19:00-22:00'];
+let timePresets = [];
+function loadTimes(){
+  try{
+    const raw = localStorage.getItem(TIME_KEY);
+    timePresets = raw ? (JSON.parse(raw)||[]) : [...STARTER_TIMES];
+    if(!raw) saveTimes();
+  }catch(e){ timePresets = [...STARTER_TIMES]; }
+}
+function saveTimes(){ try{ localStorage.setItem(TIME_KEY, JSON.stringify(timePresets)); }catch(e){} }
+function refreshTimeList(){
+  const dl=$('#dlTimes'); if(dl) dl.innerHTML = timePresets.map(t=>`<option value="${escapeAttr(t)}"></option>`).join('');
+}
+
+/* ---------- 메뉴 라이브러리 ---------- */
+const STARTER_MENUS = {
+  '라즈베리잼 스콘':{color:'orange',cat:'홈베이커리'},
+  '소금빵':{color:'orange',cat:'홈베이커리'},
+  '블루베리모찌빵':{color:'orange',cat:'홈베이커리'},
+  '샌드쿠키':{color:'orange',cat:'홈베이커리'},
+  '레몬커드마카롱':{color:'blue',cat:'파티스리베이직'},
+  '에그타르트':{color:'blue',cat:'파티스리베이직'},
+  '연유/초코마들렌':{color:'blue',cat:'파티스리베이직'},
+  '플레인/오레오 휘낭시에':{color:'green',cat:'채식베이커리'},
+  '올리브 치즈스콘':{color:'green',cat:'채식베이커리'},
+  '말차/플레인 가나슈 쿠키':{color:'green',cat:'채식베이커리'},
+};
+let menuLib = {};
+function loadMenus(){
+  try{
+    const raw = localStorage.getItem(MENU_KEY);
+    if(raw){ menuLib = JSON.parse(raw)||{}; }
+    else { menuLib = {...STARTER_MENUS}; saveMenus(); }
+  }catch(e){ menuLib = {}; }
+}
+function saveMenus(){ try{ localStorage.setItem(MENU_KEY, JSON.stringify(menuLib)); }catch(e){} }
+function upsertMenu(name,color,cat){
+  if(!name) return;
+  const prev = menuLib[name] || {};
+  menuLib[name] = {color:color||'black', cat:cat||prev.cat||'미분류'};
+}
+function nameOptionsFor(cat){
+  return Object.keys(menuLib)
+    .filter(n => !cat || (menuLib[n].cat||'미분류')===cat)
+    .sort((a,b)=>a.localeCompare(b,'ko'))
+    .map(n=>`<option value="${escapeAttr(n)}"></option>`).join('');
+}
+function refreshNameList(){ const dl=$('#dlNames'); if(dl) dl.innerHTML = nameOptionsFor(''); }
+
+/* ---------- 로드/세이브 ---------- */
+function loadMonth(y,m){
+  try{
+    const raw = localStorage.getItem(keyFor(y,m));
+    state = raw ? JSON.parse(raw) : {year:y,month:m,days:{}};
+  }catch(e){ state = {year:y,month:m,days:{}}; }
+  state.year=y; state.month=m; if(!state.days) state.days={};
+}
+function saveMonth(){
+  try{ localStorage.setItem(keyFor(state.year,state.month), JSON.stringify(state)); }catch(e){}
+}
+function loadGlobal(){
+  try{
+    const g = JSON.parse(localStorage.getItem(GLOBAL_KEY)||'{}');
+    if(g.price) $('#priceTxt').textContent = g.price;
+    if(g.apply){ document.querySelectorAll('.apply-box [contenteditable]').forEach((el,i)=>{ if(g.apply[i]!=null) el.textContent=g.apply[i]; }); }
+    if(g.notes){ document.querySelectorAll('.footer .notes li').forEach((el,i)=>{ if(g.notes[i]!=null) el.textContent=g.notes[i]; }); }
+    if(g.phone) $('.footer .phone').textContent=g.phone;
+    if(g.loc) $('.footer .loc').textContent=g.loc;
+    if(g.bg){ $('#bg').style.backgroundImage=`url(${g.bg})`; $('#poster').style.backgroundImage=`url(${g.bg})`; }
+  }catch(e){}
+}
+function saveGlobal(){
+  const g = {
+    price: $('#priceTxt').textContent,
+    apply: [...document.querySelectorAll('.apply-box [contenteditable]')].map(e=>e.textContent),
+    notes: [...document.querySelectorAll('.footer .notes li')].map(e=>e.textContent),
+    phone: $('.footer .phone').textContent,
+    loc: $('.footer .loc').textContent,
+    bg: $('#bg').dataset.src || ''
+  };
+  try{ localStorage.setItem(GLOBAL_KEY, JSON.stringify(g)); }catch(e){}
+}
+
+/* ---------- 달력 렌더 ---------- */
+function colorClass(k){ return 'c-'+(k||'black'); }
+
+function renderCalendar(){
+  const {year,month} = state;
+  $('#ymText').textContent = `${year}.${String(month).padStart(2,'0')}`;
+  const first = new Date(year, month-1, 1).getDay();   // 0=일
+  const dim = new Date(year, month, 0).getDate();
+  const body = $('#calBody'); body.innerHTML='';
+  let day = 1, done=false;
+  const rows = Math.ceil((first+dim)/7);
+  for(let r=0;r<rows;r++){
+    const tr=document.createElement('tr');
+    for(let c=0;c<7;c++){
+      const td=document.createElement('td');
+      const idx=r*7+c;
+      if(idx<first || day>dim){
+        td.className='empty';
+      }else{
+        const d=day;
+        td.dataset.day=d;
+        const num=document.createElement('div');
+        num.className='daynum'+(c===0?' sun':c===6?' sat':'');
+        num.textContent=d;
+        td.appendChild(num);
+        const ent=document.createElement('div');
+        ent.className='entries';
+        (state.days[d]||[]).forEach(e=>{
+          const div=document.createElement('div');
+          div.className='entry '+colorClass(e.color);
+          div.innerHTML=`<span class="nm">${escapeHtml(e.name||'')}</span>`+
+                        (e.time?`<span class="tm">${escapeHtml(e.time)}</span>`:'');
+          ent.appendChild(div);
+        });
+        td.appendChild(ent);
+        td.addEventListener('click',()=>{ if(editing) openDay(d,c); });
+        day++;
+      }
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+    if(done) break;
+  }
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+/* ---------- 편집 패널 ---------- */
+function openDay(d,weekday){
+  activeDay=d;
+  const wd = new Date(state.year, state.month-1, d).getDay();
+  $('#panelTitle').textContent = `${state.month}월 ${d}일 (${WEEK_KR[wd]})`;
+  const rows=$('#rows'); rows.innerHTML='';
+  const list = state.days[d] && state.days[d].length ? state.days[d] : [{name:'',time:'',color:'black'}];
+  list.forEach(addRowEl);
+  $('#overlay').classList.add('open');
+}
+let _rowSeq = 0;
+function addRowEl(e){
+  e = e||{name:'',time:'',color:'black',cat:''};
+  const uid = 'nl'+(_rowSeq++);
+  const wrap=document.createElement('div');
+  wrap.className='row';
+  wrap.innerHTML=`
+    <select class="f-cat">${catOptions(e.cat||'', true)}</select>
+    <input class="f-name" type="text" list="${uid}" placeholder="메뉴명" value="${escapeAttr(e.name)}">
+    <datalist id="${uid}"></datalist>
+    <input class="f-time" type="text" list="dlTimes" placeholder="10:00-13:00" value="${escapeAttr(e.time)}">
+    <select class="f-color">${colorOptions(e.color)}</select>
+    <button class="del" title="삭제">×</button>`;
+  const catI=wrap.querySelector('.f-cat'), nameI=wrap.querySelector('.f-name'),
+        timeI=wrap.querySelector('.f-time'), colorI=wrap.querySelector('.f-color'),
+        dl=wrap.querySelector('#'+uid);
+  const fillNames=()=>{ dl.innerHTML = nameOptionsFor(catI.value); };
+  fillNames();
+  // 분류를 바꾸면 그 수업 메뉴만 자동완성에 표시
+  catI.addEventListener('change',fillNames);
+  // 저장된 메뉴를 고르면 분류·색상 자동 채움 (시간은 직접 골라요)
+  nameI.addEventListener('input',()=>{
+    const m=menuLib[nameI.value.trim()];
+    if(m){
+      if(m.cat){ catI.value=m.cat; fillNames(); }
+      colorI.value=m.color||'black';
+    }
+  });
+  wrap.querySelector('.del').addEventListener('click',()=>wrap.remove());
+  $('#rows').appendChild(wrap);
+}
+function escapeAttr(s){return (s||'').replace(/"/g,'&quot;');}
+
+function collectRows(){
+  return [...document.querySelectorAll('#rows .row')].map(r=>({
+    name:r.querySelector('.f-name').value.trim(),
+    time:r.querySelector('.f-time').value.trim(),
+    color:r.querySelector('.f-color').value,
+    cat:r.querySelector('.f-cat').value
+  })).filter(e=>e.name);
+}
+
+/* ---------- 이벤트 ---------- */
+$('#addRow').addEventListener('click',()=>addRowEl());
+$('#btnCancel').addEventListener('click',()=>$('#overlay').classList.remove('open'));
+$('#overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') $('#overlay').classList.remove('open'); });
+$('#btnClearDay').addEventListener('click',()=>{ delete state.days[activeDay]; saveMonth(); renderCalendar(); $('#overlay').classList.remove('open'); });
+$('#btnSaveDay').addEventListener('click',()=>{
+  const list=collectRows();
+  if(list.length) state.days[activeDay]=list; else delete state.days[activeDay];
+  list.forEach(e=>upsertMenu(e.name,e.color,e.cat));   // 쓴 메뉴 자동 저장 (분류·색상)
+  saveMenus(); refreshNameList();
+  saveMonth(); renderCalendar(); $('#overlay').classList.remove('open');
+});
+
+$('#btnEdit').addEventListener('click',()=>{
+  editing=!editing;
+  document.body.classList.toggle('editing',editing);
+  $('#btnEdit').textContent = editing ? '✅ 편집 종료' : '✏️ 편집 모드';
+  $('#btnEdit').classList.toggle('primary',editing);
+});
+
+$('#btnPrint').addEventListener('click',()=>window.print());
+
+/* ---------- 메뉴 목록 관리 ---------- */
+function addMenuRowEl(name,m){
+  m = m||{color:'black',cat:'미분류'};
+  const wrap=document.createElement('div');
+  wrap.className='row mrow';
+  wrap.innerHTML=`
+    <select class="m-cat">${catOptions(m.cat||'미분류', false)}</select>
+    <input class="m-name" type="text" placeholder="메뉴명" value="${escapeAttr(name||'')}">
+    <select class="m-color">${colorOptions(m.color)}</select>
+    <button class="del" title="삭제">×</button>`;
+  const catI=wrap.querySelector('.m-cat'), colorI=wrap.querySelector('.m-color');
+  // 빈 행에서 분류를 고르면 그 분류 기본색으로 자동 설정
+  catI.addEventListener('change',()=>{
+    if(!wrap.querySelector('.m-name').value.trim() || colorI.dataset.touched!=='1'){
+      colorI.value = CAT_COLOR[catI.value] || 'black';
+    }
+  });
+  colorI.addEventListener('change',()=>{ colorI.dataset.touched='1'; });
+  wrap.querySelector('.del').addEventListener('click',()=>wrap.remove());
+  $('#menuRows').appendChild(wrap);
+}
+function openMenuMgr(){
+  const box=$('#menuRows'); box.innerHTML='';
+  const order = c => { const i=CATEGORIES.indexOf(c); return i<0?99:i; };
+  const names=Object.keys(menuLib).sort((a,b)=>{
+    const ca=menuLib[a].cat||'미분류', cb=menuLib[b].cat||'미분류';
+    if(ca!==cb) return order(ca)-order(cb) || ca.localeCompare(cb,'ko');
+    return a.localeCompare(b,'ko');
+  });
+  if(names.length===0) addMenuRowEl('',null);
+  else names.forEach(n=>addMenuRowEl(n,menuLib[n]));
+  $('#menuOverlay').classList.add('open');
+}
+$('#btnMenuMgr').addEventListener('click',openMenuMgr);
+$('#addMenuRow').addEventListener('click',()=>addMenuRowEl('',null));
+$('#btnMenuCancel').addEventListener('click',()=>$('#menuOverlay').classList.remove('open'));
+$('#menuOverlay').addEventListener('click',e=>{ if(e.target.id==='menuOverlay') $('#menuOverlay').classList.remove('open'); });
+$('#btnMenuSave').addEventListener('click',()=>{
+  const next={};
+  [...document.querySelectorAll('#menuRows .row')].forEach(r=>{
+    const n=r.querySelector('.m-name').value.trim();
+    if(n) next[n]={ color:r.querySelector('.m-color').value, cat:r.querySelector('.m-cat').value };
+  });
+  menuLib=next; saveMenus(); refreshNameList();
+  $('#menuOverlay').classList.remove('open');
+});
+
+/* ---------- 시간 종류 관리 ---------- */
+function addTimeRowEl(val){
+  const wrap=document.createElement('div');
+  wrap.className='row trow';
+  wrap.innerHTML=`
+    <input class="t-val" type="text" placeholder="예) 10:00-13:00" value="${escapeAttr(val||'')}">
+    <button class="del" title="삭제">×</button>`;
+  wrap.querySelector('.del').addEventListener('click',()=>wrap.remove());
+  $('#timeRows').appendChild(wrap);
+}
+function openTimeMgr(){
+  const box=$('#timeRows'); box.innerHTML='';
+  if(timePresets.length===0) addTimeRowEl('');
+  else timePresets.forEach(t=>addTimeRowEl(t));
+  $('#timeOverlay').classList.add('open');
+}
+$('#btnTimeMgr').addEventListener('click',openTimeMgr);
+$('#addTimeRow').addEventListener('click',()=>addTimeRowEl(''));
+$('#btnTimeCancel').addEventListener('click',()=>$('#timeOverlay').classList.remove('open'));
+$('#timeOverlay').addEventListener('click',e=>{ if(e.target.id==='timeOverlay') $('#timeOverlay').classList.remove('open'); });
+$('#btnTimeSave').addEventListener('click',()=>{
+  const seen=new Set(), list=[];
+  [...document.querySelectorAll('#timeRows .t-val')].forEach(i=>{
+    const v=i.value.trim();
+    if(v && !seen.has(v)){ seen.add(v); list.push(v); }
+  });
+  timePresets=list; saveTimes(); refreshTimeList();
+  $('#timeOverlay').classList.remove('open');
+});
+
+/* 연/월 선택 */
+function buildSelectors(){
+  const ys=$('#selYear'), ms=$('#selMonth');
+  for(let y=2025;y<=2030;y++) ys.add(new Option(y+'년',y));
+  for(let m=1;m<=12;m++) ms.add(new Option(m+'월',m));
+  ys.value=state.year; ms.value=state.month;
+  ys.addEventListener('change',()=>{ saveMonth(); loadMonth(+ys.value,+ms.value); renderCalendar(); });
+  ms.addEventListener('change',()=>{ saveMonth(); loadMonth(+ys.value,+ms.value); renderCalendar(); });
+}
+
+/* 배경사진 */
+$('#bgFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    $('#bg').style.backgroundImage=`url(${reader.result})`;
+    $('#bg').dataset.src=reader.result;
+    $('#poster').style.backgroundImage=`url(${reader.result})`;
+    saveGlobal();
+  };
+  reader.readAsDataURL(f);
+});
+$('#btnBgClear').addEventListener('click',()=>{
+  $('#bg').style.backgroundImage=''; $('#bg').dataset.src='';
+  $('#poster').style.backgroundImage=''; saveGlobal();
+});
+
+/* 공통 텍스트 자동저장 */
+document.addEventListener('input',e=>{
+  if(e.target.closest('.apply-box, .footer, #priceTxt')) saveGlobal();
+});
+
+/* 백업 내보내기/가져오기 */
+$('#btnExport').addEventListener('click',()=>{
+  const all={};
+  for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k.startsWith('oneday_')) all[k]=localStorage.getItem(k); }
+  const blob=new Blob([JSON.stringify(all,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='oneday_백업_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+});
+$('#importFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const all=JSON.parse(reader.result);
+      Object.entries(all).forEach(([k,v])=>localStorage.setItem(k,v));
+      loadGlobal(); loadMenus(); refreshNameList(); loadTimes(); refreshTimeList(); loadMonth(state.year,state.month); renderCalendar();
+      alert('백업을 불러왔습니다.');
+    }catch(err){ alert('파일을 읽을 수 없습니다.'); }
+  };
+  reader.readAsText(f);
+});
+
+/* ---------- 시작 ---------- */
+loadGlobal();
+loadMenus();
+refreshNameList();
+loadTimes();
+refreshTimeList();
+loadMonth(state.year,state.month);
+buildSelectors();
+renderCalendar();
+</script>
+</body>
+</html>
