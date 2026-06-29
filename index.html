@@ -137,15 +137,20 @@
   .panel{background:#fff;border-radius:12px;width:580px;max-width:100%;max-height:90vh;overflow:auto;padding:20px 22px}
   .panel h3{margin:0 0 4px;font-size:18px}
   .panel .sub{color:#777;font-size:13px;margin-bottom:14px}
-  .row{display:grid;grid-template-columns:108px 1fr 116px 28px;gap:6px;align-items:center;margin-bottom:8px}
+  .row{display:grid;grid-template-columns:100px 1fr 96px 86px;gap:6px;align-items:center;margin-bottom:8px}
   .row input{font-family:inherit;font-size:13px;padding:7px 8px;border:1px solid #ccc;border-radius:6px;width:100%}
   .row select{font-family:inherit;font-size:13px;padding:7px 5px;border:1px solid #ccc;border-radius:6px;width:100%}
   .row .del{background:#f3f3f3;border:none;border-radius:6px;cursor:pointer;font-size:15px;color:#c62828;padding:7px 0}
   .row .del:hover{background:#fde8e8}
   .row datalist{display:none}
+  .ctrls{display:flex;gap:3px}
+  .ctrls button{flex:1;border:none;border-radius:6px;cursor:pointer;padding:7px 0;font-size:13px;background:#f3f3f3;color:#555;line-height:1}
+  .ctrls button:hover{background:#e7e7e7}
+  .ctrls .del{color:#c62828;font-size:15px}
+  .ctrls .del:hover{background:#fde8e8}
   .row.mrow{grid-template-columns:150px 1fr 28px}
   .row.trow{grid-template-columns:1fr 88px 28px}
-  .row-head{display:grid;grid-template-columns:108px 1fr 116px 28px;gap:6px;font-size:11px;color:#888;margin-bottom:4px;padding:0 2px}
+  .row-head{display:grid;grid-template-columns:100px 1fr 96px 86px;gap:6px;font-size:11px;color:#888;margin-bottom:4px;padding:0 2px}
   .row-head.mhead{grid-template-columns:150px 1fr 28px}
   .row-head.thead{grid-template-columns:1fr 88px 28px}
   .panel-actions{display:flex;gap:8px;margin-top:16px}
@@ -247,11 +252,12 @@
   <div class="panel">
     <h3 id="panelTitle">7월 1일 (수)</h3>
     <div class="sub">먼저 분류를 고르면 그 수업 메뉴만 자동완성에 떠요. 시간을 고르면 색상은 시간대별 색으로 자동 적용됩니다.</div>
-    <div class="row-head"><span>분류</span><span>메뉴명</span><span>시간</span><span></span></div>
+    <div class="row-head"><span>분류</span><span>메뉴명</span><span>시간</span><span>순서·삭제</span></div>
     <div id="rows"></div>
     <button class="add-line" id="addRow">+ 메뉴 추가</button>
     <div class="panel-actions">
       <button class="btn ghost" id="btnCancel">취소</button>
+      <button class="btn ghost" id="btnSortTime">시간순 정렬</button>
       <div class="sp"></div>
       <button class="btn" id="btnClearDay">이 날 비우기</button>
       <button class="btn primary" id="btnSaveDay">저장</button>
@@ -482,7 +488,11 @@ function addRowEl(e){
     <input class="f-name" type="text" list="${uid}" placeholder="메뉴명" value="${escapeAttr(e.name)}">
     <datalist id="${uid}"></datalist>
     <input class="f-time" type="text" list="dlTimes" placeholder="10:00-13:00" value="${escapeAttr(e.time)}">
-    <button class="del" title="삭제">×</button>`;
+    <div class="ctrls">
+      <button class="mv" data-dir="up" title="위로">↑</button>
+      <button class="mv" data-dir="down" title="아래로">↓</button>
+      <button class="del" title="삭제">×</button>
+    </div>`;
   const catI=wrap.querySelector('.f-cat'), nameI=wrap.querySelector('.f-name'),
         dl=wrap.querySelector('#'+uid);
   const fillNames=()=>{ dl.innerHTML = nameOptionsFor(catI.value); };
@@ -495,6 +505,11 @@ function addRowEl(e){
     if(m && m.cat){ catI.value=m.cat; fillNames(); }
   });
   wrap.querySelector('.del').addEventListener('click',()=>wrap.remove());
+  wrap.querySelectorAll('.mv').forEach(b=>b.addEventListener('click',()=>{
+    const box=$('#rows');
+    if(b.dataset.dir==='up' && wrap.previousElementSibling) box.insertBefore(wrap, wrap.previousElementSibling);
+    if(b.dataset.dir==='down' && wrap.nextElementSibling) box.insertBefore(wrap.nextElementSibling, wrap);
+  }));
   $('#rows').appendChild(wrap);
 }
 function escapeAttr(s){return (s||'').replace(/"/g,'&quot;');}
@@ -509,6 +524,13 @@ function collectRows(){
 
 /* ---------- 이벤트 ---------- */
 $('#addRow').addEventListener('click',()=>addRowEl());
+$('#btnSortTime').addEventListener('click',()=>{
+  const box=$('#rows');
+  const parse=t=>{ const m=(t||'').match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]*60 + +m[2]) : 9999; };
+  [...box.querySelectorAll('.row')]
+    .sort((a,b)=>parse(a.querySelector('.f-time').value)-parse(b.querySelector('.f-time').value))
+    .forEach(r=>box.appendChild(r));
+});
 $('#btnCancel').addEventListener('click',()=>$('#overlay').classList.remove('open'));
 $('#overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') $('#overlay').classList.remove('open'); });
 $('#btnClearDay').addEventListener('click',()=>{ delete state.days[activeDay]; saveMonth(); renderCalendar(); $('#overlay').classList.remove('open'); });
