@@ -167,8 +167,8 @@
     @page{size:A4 portrait;margin:0}
     html,body{background:#fff;margin:0}
     .toolbar,.overlay,.hint{display:none !important}
-    .stage{padding:0;margin:0;display:block}
-    .poster{margin:0 auto;box-shadow:none}
+    .stage{padding:0;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center}
+    .poster{zoom:0.9;box-shadow:none;break-inside:avoid;page-break-inside:avoid}
     body.editing .cal td:hover{background:none;outline:none}
   }
 </style>
