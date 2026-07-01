@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Playfair+Display:wght@700;900&family=Pinyon+Script&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
     --ink:#1a1a1a;
@@ -198,6 +199,7 @@
     <input type="file" id="importFile" accept="application/json" style="display:none">
   </label>
   <button class="btn primary" id="btnPrint">🖨️ PDF / 인쇄</button>
+  <button class="btn primary" id="btnJpg">🖼️ JPG 저장</button>
   <div class="hint">날짜 칸을 클릭하면 메뉴를 추가·수정할 수 있어요. 입력 내용은 이 브라우저에 월별로 자동 저장됩니다. (GitHub Pages에 올려서 매달 쓰셔도 됩니다)</div>
 </div>
 
@@ -557,6 +559,28 @@ $('#btnEdit').addEventListener('click',()=>{
 });
 
 $('#btnPrint').addEventListener('click',()=>window.print());
+
+$('#btnJpg').addEventListener('click', async ()=>{
+  const btn=$('#btnJpg'), orig=btn.textContent;
+  if(typeof html2canvas==='undefined'){ alert('이미지 변환 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.'); return; }
+  btn.disabled=true; btn.textContent='생성 중…';
+  try{
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    await new Promise(r=>setTimeout(r,50));
+    const poster=$('#poster');
+    const canvas=await html2canvas(poster,{scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false});
+    const url=canvas.toDataURL('image/jpeg',0.95);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`원데이클래스_${state.year}-${String(state.month).padStart(2,'0')}.jpg`;
+    document.body.appendChild(a); a.click(); a.remove();
+  }catch(err){
+    console.error(err);
+    alert('이미지 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+  }finally{
+    btn.disabled=false; btn.textContent=orig;
+  }
+});
 
 /* ---------- 메뉴 목록 관리 ---------- */
 function addMenuRowEl(name,m){
