@@ -188,6 +188,7 @@
   </label>
   <button class="btn" id="btnEdit">✏️ 편집 모드</button>
   <button class="btn" id="btnMenuMgr">📋 메뉴 목록</button>
+  <button class="btn" id="btnCatMgr">🎓 과정 관리</button>
   <button class="btn" id="btnTimeMgr">⏰ 시간 종류</button>
   <label class="btn ghost" style="cursor:pointer">🖼️ 배경사진
     <input type="file" id="bgFile" accept="image/*" style="display:none">
@@ -303,6 +304,22 @@
   </div>
 </div>
 
+<!-- 과정(대분류) 관리 -->
+<div class="overlay" id="catOverlay">
+  <div class="panel" style="width:420px">
+    <h3>과정 관리</h3>
+    <div class="sub">원데이 클래스를 진행하는 과정(대분류)을 추가·수정·삭제하세요. 여기서 만든 과정이 날짜 입력과 메뉴 목록의 분류에 나타납니다.</div>
+    <div class="row-head" style="grid-template-columns:1fr 28px"><span>과정 이름</span><span></span></div>
+    <div id="catRows"></div>
+    <button class="add-line" id="addCatRow">+ 과정 추가</button>
+    <div class="panel-actions">
+      <button class="btn ghost" id="btnCatCancel">취소</button>
+      <div class="sp"></div>
+      <button class="btn primary" id="btnCatSave">저장</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const COLORS = [
   {key:'black', label:'검정', css:'var(--c-black)'},
@@ -312,8 +329,17 @@ const COLORS = [
   {key:'red',   label:'빨강', css:'var(--c-red)'},
   {key:'purple',label:'보라', css:'var(--c-purple)'},
 ];
-const CATEGORIES = ['홈베이커리','파티스리베이직','채식베이커리'];
-const CAT_COLOR = {'홈베이커리':'orange','파티스리베이직':'blue','채식베이커리':'green','미분류':'black'};
+const STARTER_CATS = ['홈베이커리','파티스리베이직','채식베이커리'];
+const CATS_KEY = 'oneday_cats';       // 과정(대분류) 목록
+let CATEGORIES = [...STARTER_CATS];
+function loadCats(){
+  try{
+    const raw = localStorage.getItem(CATS_KEY);
+    CATEGORIES = raw ? (JSON.parse(raw)||[]) : [...STARTER_CATS];
+    if(!raw) saveCats();
+  }catch(e){ CATEGORIES = [...STARTER_CATS]; }
+}
+function saveCats(){ try{ localStorage.setItem(CATS_KEY, JSON.stringify(CATEGORIES)); }catch(e){} }
 const WEEK_KR = ['일','월','화','수','목','금','토'];
 
 function colorOptions(sel){
@@ -321,6 +347,8 @@ function colorOptions(sel){
 }
 function catOptions(sel, withAll){
   const list = withAll ? ['', ...CATEGORIES, '미분류'] : [...CATEGORIES, '미분류'];
+  // 저장된 값이 목록에 없으면(삭제된 과정 등) 그대로 보여주기 위해 포함
+  if(sel && !list.includes(sel)) list.push(sel);
   return list.map(c=>`<option value="${c}" ${c===sel?'selected':''}>${c||'전체'}</option>`).join('');
 }
 
@@ -653,6 +681,47 @@ $('#btnTimeSave').addEventListener('click',()=>{
   $('#timeOverlay').classList.remove('open');
 });
 
+/* ---------- 과정(대분류) 관리 ---------- */
+function addCatRowEl(name){
+  const wrap=document.createElement('div');
+  wrap.className='row trow';
+  wrap.style.gridTemplateColumns='1fr 28px';
+  wrap.innerHTML=`
+    <input class="cat-name" type="text" placeholder="예) 홈베이커리" value="${escapeAttr(name||'')}" data-orig="${escapeAttr(name||'')}">
+    <button class="del" title="삭제">×</button>`;
+  wrap.querySelector('.del').addEventListener('click',()=>wrap.remove());
+  $('#catRows').appendChild(wrap);
+}
+function openCatMgr(){
+  const box=$('#catRows'); box.innerHTML='';
+  if(CATEGORIES.length===0) addCatRowEl('');
+  else CATEGORIES.forEach(c=>addCatRowEl(c));
+  $('#catOverlay').classList.add('open');
+}
+$('#btnCatMgr').addEventListener('click',openCatMgr);
+$('#addCatRow').addEventListener('click',()=>addCatRowEl(''));
+$('#btnCatCancel').addEventListener('click',()=>$('#catOverlay').classList.remove('open'));
+$('#catOverlay').addEventListener('click',e=>{ if(e.target.id==='catOverlay') $('#catOverlay').classList.remove('open'); });
+$('#btnCatSave').addEventListener('click',()=>{
+  const seen=new Set(), list=[], rename={}, kept=new Set();
+  [...document.querySelectorAll('#catRows .cat-name')].forEach(i=>{
+    const v=i.value.trim(), orig=i.dataset.orig||'';
+    if(v && !seen.has(v)){
+      seen.add(v); list.push(v);
+      if(orig) { rename[orig]=v; kept.add(orig); }
+    }
+  });
+  // 이름이 바뀌거나 삭제된 과정을 메뉴 목록에 반영
+  Object.keys(menuLib).forEach(n=>{
+    const c=menuLib[n].cat;
+    if(!c || c==='미분류') return;
+    if(rename[c]) menuLib[n].cat=rename[c];          // 이름 변경
+    else if(!list.includes(c)) menuLib[n].cat='미분류'; // 삭제된 과정
+  });
+  CATEGORIES=list; saveCats(); saveMenus(); refreshNameList();
+  $('#catOverlay').classList.remove('open');
+});
+
 /* 연/월 선택 */
 function buildSelectors(){
   const ys=$('#selYear'), ms=$('#selMonth');
@@ -702,7 +771,7 @@ $('#importFile').addEventListener('change',e=>{
     try{
       const all=JSON.parse(reader.result);
       Object.entries(all).forEach(([k,v])=>localStorage.setItem(k,v));
-      loadGlobal(); loadMenus(); refreshNameList(); loadTimes(); refreshTimeList(); loadMonth(state.year,state.month); renderCalendar();
+      loadGlobal(); loadCats(); loadMenus(); refreshNameList(); loadTimes(); refreshTimeList(); loadMonth(state.year,state.month); renderCalendar();
       alert('백업을 불러왔습니다.');
     }catch(err){ alert('파일을 읽을 수 없습니다.'); }
   };
@@ -711,6 +780,7 @@ $('#importFile').addEventListener('change',e=>{
 
 /* ---------- 시작 ---------- */
 loadGlobal();
+loadCats();
 loadMenus();
 refreshNameList();
 loadTimes();
