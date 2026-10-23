@@ -200,8 +200,16 @@
     <input type="file" id="importFile" accept="application/json" style="display:none">
   </label>
   <button class="btn primary" id="btnPrint">🖨️ PDF / 인쇄</button>
+  <label>크기
+    <select id="imgSize">
+      <option value="1080">네이버 소식용 (1080)</option>
+      <option value="1600" selected>웹·광고용 (1600)</option>
+      <option value="2480">인쇄용 (2480)</option>
+    </select>
+  </label>
+  <button class="btn primary" id="btnPng">🖼️ PNG 저장</button>
   <button class="btn primary" id="btnJpg">🖼️ JPG 저장</button>
-  <div class="hint">날짜 칸을 클릭하면 메뉴를 추가·수정할 수 있어요. 입력 내용은 이 브라우저에 월별로 자동 저장됩니다. (GitHub Pages에 올려서 매달 쓰셔도 됩니다)</div>
+  <div class="hint">날짜 칸을 클릭하면 메뉴를 추가·수정할 수 있어요. 네이버 플레이스 소식에 올릴 땐 "네이버 소식용(1080) + PNG"가 가장 덜 깨집니다. 입력 내용은 이 브라우저에 월별로 자동 저장됩니다.</div>
 </div>
 
 <div class="stage">
@@ -588,21 +596,21 @@ $('#btnEdit').addEventListener('click',()=>{
 
 $('#btnPrint').addEventListener('click',()=>window.print());
 
-$('#btnJpg').addEventListener('click', async ()=>{
-  const btn=$('#btnJpg'), orig=btn.textContent;
+async function saveImage(fmt, btn){
+  const orig=btn.textContent;
   if(typeof html2canvas==='undefined'){ alert('이미지 변환 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.'); return; }
   btn.disabled=true; btn.textContent='생성 중…';
   try{
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
     await new Promise(r=>setTimeout(r,50));
     const poster=$('#poster');
-    const TARGET_W=2480;                          // 고해상도 (인쇄·광고용)
-    const scale=Math.max(2, TARGET_W/poster.offsetWidth);
+    const targetW=+($('#imgSize').value)||1600;
+    const scale=Math.max(1, targetW/poster.offsetWidth);
     const canvas=await html2canvas(poster,{scale, useCORS:true, backgroundColor:'#ffffff', logging:false});
-    const url=canvas.toDataURL('image/jpeg',0.95);
+    const url = fmt==='png' ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg',0.95);
     const a=document.createElement('a');
     a.href=url;
-    a.download=`원데이클래스_${state.year}-${String(state.month).padStart(2,'0')}.jpg`;
+    a.download=`원데이클래스_${state.year}-${String(state.month).padStart(2,'0')}.${fmt}`;
     document.body.appendChild(a); a.click(); a.remove();
   }catch(err){
     console.error(err);
@@ -610,7 +618,9 @@ $('#btnJpg').addEventListener('click', async ()=>{
   }finally{
     btn.disabled=false; btn.textContent=orig;
   }
-});
+}
+$('#btnJpg').addEventListener('click', e=>saveImage('jpg', e.currentTarget));
+$('#btnPng').addEventListener('click', e=>saveImage('png', e.currentTarget));
 
 /* ---------- 메뉴 목록 관리 ---------- */
 function addMenuRowEl(name,m){
